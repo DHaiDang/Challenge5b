@@ -21,7 +21,7 @@ class WorkController extends Controller {
         return view('work.list', ['users' => $users, 'isAdmin' => $data['isAdmin']]);
     }
     public function info($id) {
-        $data = $this->queryById($id);
+        $data = $this->queryById($id, 'users');
         $data = json_decode( json_encode($data), true);
         return view('work.info', [
             'id' => $data['id'],
