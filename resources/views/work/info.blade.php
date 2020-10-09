@@ -1,7 +1,7 @@
 @extends('layout.master')
 @section('content')
 
-<div class="container" style="margin-top : 5rem">
+<div class="col-sm-12">
     <h2>Hello {{$fullname}}</h2>
     <p><em>Do you wanna to change your infomation ?</em></p>
     <form action="/update/{{$id}}" method="POST" id="regForm" class="col-md-4" >
@@ -44,9 +44,11 @@
             <span class="error">{{ $errors->first('password') }}</span>
             @endif  
         </div>
-
         <button class="btn btn-lg btn-info btn-block btn-login text-uppercase font-weight-bold mb-2" type="submit">Update</button>
     </form>
 </div>
+<!-- <div class="col-sm-6">
+    <img src="/img/ava.png" alt="Toan ngu vl">
+</div> -->
 
 @endsection

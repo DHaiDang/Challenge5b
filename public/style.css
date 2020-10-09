@@ -172,3 +172,7 @@
   background-color: red;
   color: red;
   }
+.linkBut:hover {
+  background-color: white;
+  color:black;
+}

@@ -40,9 +40,9 @@
   </script>
 </head>
 <body>
+@include('layout.header')
 <div class="d-flex" id="wrapper">
-    @include('layout.header')
-    <div class="container-fluid">
+    <div class="container" style="margin-top:5rem">
       @section('content') @show
     </div>
 </div>

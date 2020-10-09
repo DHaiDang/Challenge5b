@@ -1,7 +1,6 @@
 @extends('layout.master')
 @section('content')
 
-
 <div class="container d-flex flex-row bd-highlight mb-3">
     <div class="ava ">
         <img class="img" src="/img/ava.png" alt="Avatar">
@@ -27,11 +26,12 @@
                 </tr>
         </tbody>
         </table>
-        <form>
+        <form method="post" action="/send/{{$idSend}}/{{$idReceive}}">
+        {{ csrf_field() }}
             <div class="form-group">
-                <textarea type="email" class="form-control mess" id="exampleFormControlTextarea1" rows="5" placeholder="Enter your mess"></textarea>
+                <textarea name="content" type="email" class="form-control mess" id="exampleFormControlTextarea1" rows="5" placeholder="Enter your mess"></textarea>
             </div>
-            <button type="submit" class="btn btn-primary">Send</button>
+            <button type="submit" class="btn btn-success">Send</button>
         </form>
     </div>
 </div>

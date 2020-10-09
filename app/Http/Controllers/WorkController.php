@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 Use App\Models\User;
+Use App\Models\Inbox;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -12,32 +13,14 @@ use Illuminate\Support\Facades\Hash;
 use Session;
 
 class WorkController extends Controller {
-    public function checks() {
-        if(!Auth::check()){
-            return redirect('login');
-        }
-    }
-    public function challenge() {
-        $this->checks();
-
-        $files = File::allFiles(public_path('Assignment')); 
-
-        $id = Auth::id();
-        $data = $this->queryById($id);
-        $data = json_decode( json_encode($data), true);
-        return view('work.challenge', ['isAdmin' => $data['isAdmin'], 'files' => $files]);
-    }
-
+    
     public function list() {
-        $this -> checks();
         $users = DB::table('users')->get();
         $id = Auth::id();
-        $data = json_decode( json_encode($this->queryById($id)), true);
+        $data = json_decode( json_encode($this->queryById($id, 'users')), true);
         return view('work.list', ['users' => $users, 'isAdmin' => $data['isAdmin']]);
     }
-
     public function info($id) {
-        $this -> checks();
         $data = $this->queryById($id);
         $data = json_decode( json_encode($data), true);
         return view('work.info', [
@@ -50,10 +33,8 @@ class WorkController extends Controller {
         ]);
     }
     public function infoo() {
-        $this -> checks();
         $id = Auth::id();
-        $data = $this->queryById($id);
-        $data = json_decode( json_encode($data), true);
+        $data = $this->queryById($id, 'users');
         return view('work.info', [
             'id' => $data['id'],
             'fullname' => $data['fullname'],
@@ -63,132 +44,85 @@ class WorkController extends Controller {
             'phone' => $data['phone'],
         ]);
     }
-
     public function detail($id) {
-        $this -> checks();
-
+        $idSend = Auth::id();
         $user = DB::table('users')->where('id', $id)->first();
-        return view('work.detail', ['user' => $user, 'id' => $id]);
-    }
-
-    public function upload(Request $request) {
-        $this -> checks();
-        if($request->hasFile('file')) {
-            $path = "Assignment";
-            $file = $request->file('file');
-            $file->move($path, $file->getClientOriginalName());
-            echo($file->getClientOriginalName());
-        }
-        // if ($request->hasFile('fileTest')) {
-        //     echo("done");
-        //     $file = $request->filesTest;
-        //     $file->move('app/public/upload', $file->getClientOriginalName());
-        //     //Lấy Tên files
-        //     echo 'Tên Files: ' . $file->getClientOriginalName();
-        //     echo '<br/>';
-        //     //Lấy Đuôi File
-        //     echo 'Đuôi file: ' . $file->getClientOriginalExtension();
-        //     echo '<br/>';
-        //     //Lấy đường dẫn tạm thời của file
-        //     echo 'Đường dẫn tạm: ' . $file->getRealPath();
-        //     echo '<br/>';
-        //     //Lấy kích cỡ của file đơn vị tính theo bytes
-        //     echo 'Kích cỡ file: ' . $file->getSize();
-        //     echo '<br/>';
-        //     //Lấy kiểu file
-        //     echo 'Kiểu files: ' . $file->getMimeType();
-        // }
-        return Redirect::to("challenge");
-    }
-    public function download($file) {
-        $path = public_path()."/Assignment/".$file;
-        return response()->download($path);
-    }
-    public function download2($file) {
-        $path = public_path()."/Homework/".$file;
-        return response()->download($path);
-    }
-    public function deleteFile($name) {
-        $path = public_path()."/Assignment/".$name;
-        unlink($path);
-        return Redirect::to("challenge");
-    }
-    public function deleteFile2($name) {
-        $path = public_path()."/Homework/".$name;
-        unlink($path);
-        return Redirect::to("challenge");
+        return view('work.detail', ['user' => $user, 'idReceive' => $id, 'idSend' => $idSend]);
     }
     public function update(Request $request,$id) {
         request()->validate([
-            'username' => 'required',
             'password' => 'required',
-            'fullname' => 'required',
             'email' => 'required',
             'phone' => 'required',
-            ]);
+        ]);
         $data = $request->all();
         $check = $this->create($data, $id);
-        return Redirect::to("info");
+        return Redirect::to("infoo");
     }
     public function create(array $data, $id) {
-
         return User::where('id',$id)->update([
-            'username' => $data['username'],
-            'fullname' => $data['fullname'],
             'phone' => $data['phone'],
             'email' => $data['email'],
             'password' => Hash::make($data['password'])
         ]);
     }
-    public function queryById($id) {
-        $data = DB::table('users')->where('id', $id)->first();
-        $dang = json_decode( json_encode($data), true);
-        return $data;
+    public function queryById($id, $table) {
+        $data = DB::table($table)->where('id', $id)->first();
+        return json_decode( json_encode($data), true);
     }
     public function deleteById($id) {
         User::find($id)->delete();
-        return;
+        return Redirect::to("list");
     }
-
     public function homework() {
-
-        $files = File::allFiles(public_path('Homework')); 
+        $files = File::allFiles(public_path('Homework'));
+        $filess = File::allFiles(public_path('Submission'));
         $id = Auth::id();
-        $data = $this->queryById($id);
+        $data = $this->queryById($id, 'users');
         $data = json_decode( json_encode($data), true);
-        return view('work.homework', ['isAdmin' => $data['isAdmin'], 'files' => $files]);
+        return view('work.homework', ['isAdmin' => $data['isAdmin'], 'files' => $files,'filess' => $filess, 'id' => $data['id']]);
     }
-    public function uploadHomeWork(Request $request) {
-        $this -> checks();
+    
+    public function message() {
+        $idReceive = Auth::id();
+        $data = DB::table('inbox')->where('idReceive' ,$idReceive)->get();
+        $dataSend = DB::table('inbox')->where('idSend' ,$idReceive)->get();
+
+        return view('work.myMess',['data'=> $data, 'dataSend' => $dataSend]);
+    }
+    public function createMess($idSend, $idReceive, $content) {
+        try{
+            $inbox = new Inbox;
+            $inbox->message = $content;
+            $inbox->idReceive = $idReceive;
+            $inbox->idSend = $idSend;
+            $inbox->save();
+            return redirect('list')->with('status',"Insert successfully");
+        }
+        catch(Exception $e){
+            return redirect('list')->with('failed',"operation failed");
+        }
+    }
+    public function send(Request $request ,$idSend, $idReceive) {
+        $send = $this->queryById($idSend, 'users')['username'].": ".$request->content;
+        // $receive = $this->queryById($idReceive);
+        $this->createMess($idSend, $idReceive, $send);
+        return Redirect::to("list");
+    }
+    public function deleteMess($id) {
+        $inbox = Inbox::find($id);
+        $inbox->delete();
+        return Redirect::to("message");
+    }
+    public function submit( Request $request,$id) {
+        $name = $this->queryById($id, 'users')['username'];
         if($request->hasFile('file')) {
-            $path = "Homework";
+            $path = "Submission";
             $file = $request->file('file');
-            $file->move($path, $file->getClientOriginalName());
+            $nameFile = $name."_".$file->getClientOriginalName();
+            $file->move($path, $nameFile);
             echo($file->getClientOriginalName());
         }
-        // if ($request->hasFile('fileTest')) {
-        //     echo("done");
-        //     $file = $request->filesTest;
-        //     $file->move('app/public/upload', $file->getClientOriginalName());
-        //     //Lấy Tên files
-        //     echo 'Tên Files: ' . $file->getClientOriginalName();
-        //     echo '<br/>';
-        //     //Lấy Đuôi File
-        //     echo 'Đuôi file: ' . $file->getClientOriginalExtension();
-        //     echo '<br/>';
-        //     //Lấy đường dẫn tạm thời của file
-        //     echo 'Đường dẫn tạm: ' . $file->getRealPath();
-        //     echo '<br/>';
-        //     //Lấy kích cỡ của file đơn vị tính theo bytes
-        //     echo 'Kích cỡ file: ' . $file->getSize();
-        //     echo '<br/>';
-        //     //Lấy kiểu file
-        //     echo 'Kiểu files: ' . $file->getMimeType();
-        // }
         return Redirect::to("homework");
-    }
-
-    public function submit($file) {
-
     }
 }
